@@ -1,8 +1,25 @@
 <template>
   <div id="app">
     <div id="nav">
-      <router-link to="/">Home</router-link> |
+      <router-link to="/limit-order">Home</router-link> |
       <router-link to="/about">About</router-link>
+      <v-btn-toggle
+          v-model="toggle_exclusive"
+          mandatory
+        >
+          <v-btn>
+            <v-icon>mdi-format-align-left</v-icon>
+          </v-btn>
+          <v-btn>
+            <v-icon>mdi-format-align-center</v-icon>
+          </v-btn>
+          <v-btn>
+            <v-icon>mdi-format-align-right</v-icon>
+          </v-btn>
+          <v-btn>
+            <v-icon>mdi-format-align-justify</v-icon>
+          </v-btn>
+        </v-btn-toggle>
     </div>
     <router-view/>
   </div>

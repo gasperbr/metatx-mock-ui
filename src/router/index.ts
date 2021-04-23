@@ -1,14 +1,18 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
-import Home from '../views/Home.vue'
+import LimitOrder from '../views/LimitOrder.vue'
 
 Vue.use(VueRouter)
 
 const routes: Array<RouteConfig> = [
   {
     path: '/',
-    name: 'Home',
-    component: Home
+    redirect: 'limit-order'
+  },
+  {
+    path: '/limit-order',
+    name: 'limit-order',
+    component: LimitOrder
   },
   {
     path: '/about',
