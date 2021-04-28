@@ -183,7 +183,7 @@ export default class LimitOrderV2 extends Vue {
   }
 
   async sign(): Promise<void> {
-    await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider);
+    console.log(await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider));
   }
   
 }
