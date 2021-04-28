@@ -108,19 +108,14 @@ export default class LimitOrderV2 extends Vue {
   inputAmount = "1";
   outputToken = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
   outputTokenDecimals = 18;
-  outputAmount = "";
+  outputAmount = "0";
   price = "";
-
-  tokenA = new Token(ChainId.KOVAN, "0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9", 18);
-  tokenB = new Token(ChainId.KOVAN, "0xDc64a140Aa3E981100a9becA4E685f962f0cF6C9", 18);
+  amountIn = new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, 18), "1");
+  amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "0");
 
   order!: LimitOrder;
-  amountIn!: TokenAmount;
-  amountOut!: TokenAmount;
 
   created(): void {
-    this.amountIn = new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, 18), "1000000000000000000") // 1
-    this.amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "3000000000000000000000") // 3000
     this.updateOrder();
   }
 
@@ -157,8 +152,16 @@ export default class LimitOrderV2 extends Vue {
 
   @Watch("inputAmount")
   inputAmountChange(amount: string): void {
+    const _price = new Price(this.amountIn.currency, this.amountOut.currency, "1000000", ((+this.price || 1) * 1e6).toString());
+    
     this.amountIn = new TokenAmount(this.amountIn.token, amount || "0");
     this.updateOrder();
+    
+    if (this.price) {
+      console.log(this.price);
+      this.order = this.order.usePrice(_price);
+      this.outputAmount = this.order.amountOut.raw.toString();
+    }
   }
 
   @Watch("outputToken")
@@ -176,7 +179,6 @@ export default class LimitOrderV2 extends Vue {
   @Watch("price")
   priceChange(price: number): void {
     if (!this.order) this.updateOrder();
-    
     const _price = new Price(this.amountIn.currency, this.amountOut.currency, "1000000", (price * 1e6).toString());
     this.order = this.order.usePrice(_price);
     this.outputAmount = this.order.amountOut.raw.toString();

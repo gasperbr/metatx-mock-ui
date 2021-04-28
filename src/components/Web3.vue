@@ -1,7 +1,10 @@
 <template>
   <v-container>
     <div>ChainId: {{chainId > 0 ? chainId : '?'}} | {{chainId === ChainId.KOVAN ? '(Kovan) ✔' :  ('Please switch to the Kovan network')}}</div>
-    <div>Address: {{address}}</div>
+    <div>Address: {{address}}<span style="text-decoration: underline" v-if="!address" v-on:click="connectMM">connnect wallet</span></div>
+    <!-- weth: 0xd0a1e359811322d97991e03f863a0c30c2cf029c -->
+    <!-- usdc: 0xb7a4f3e9097c08da09517b5ab877f7a917224ede -->
+    <!-- usdt: 0x07de306ff27a2b630b1141956844eb1552b956b5 -->
   </v-container>
 </template>
 
@@ -22,12 +25,18 @@ export default class Web3 extends Vue {
   ChainId = ChainId;
 
   created(): void {
-    this.updateWeb3();
+    this.connectMM();
+  }
+
+  async connectMM() {
+    if (!window.ethereum) return;
+    await window.ethereum.request({ method: 'eth_requestAccounts' });
+    await this.updateWeb3();
   }
 
   async updateWeb3(): Promise<void> {
 
-    await await window.ethereum.enable();
+    await window.ethereum?.enable();
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     
     if (!provider) return;
