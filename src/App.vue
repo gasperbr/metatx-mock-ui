@@ -31,7 +31,7 @@
 .page {
   width: 95vw;
   max-width: 700px;
-  margin: auto;
+  margin: 0 auto;
 }
 </style>
 

@@ -26,6 +26,8 @@ export default class Web3 extends Vue {
   }
 
   async updateWeb3(): Promise<void> {
+
+    await await window.ethereum.enable();
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     
     if (!provider) return;
