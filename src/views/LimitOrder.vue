@@ -95,7 +95,7 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh } from 'limitorderv2-sdk';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI } from 'limitorderv2-sdk';
 import { ethers } from 'ethers';
 
 @Component({
@@ -121,12 +121,12 @@ export default class LimitOrderV2 extends Vue {
   }
 
   updateOrder(): void {
+    console.log(this.inputToken);
     if (!this.validParams()) return;
-    console.log(this.amountOut);
     this.order = new LimitOrder(
       this.$store.state.address,
-      this.amountIn,
-      this.amountOut,
+      new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
+      new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, this.outputTokenDecimals), this.outputAmount || "0"),
       this.$store.state.address,
       "0",
       "2000000000000",
@@ -134,6 +134,7 @@ export default class LimitOrderV2 extends Vue {
       "0x0000000000000000000000000000000000000000",
       ethers.utils.keccak256("0x00000000000000000000000000000000000000000000000000000000000000")
     );
+    console.log(this.order.amountIn.token.address, this.order.amountIn.raw.toString())
   }
 
   addZerosInput(): void {
@@ -149,55 +150,31 @@ export default class LimitOrderV2 extends Vue {
   }
 
   @Watch("inputToken")
-  inputTokenChange(address: string): void {
-    this.amountIn = new TokenAmount(new Token(ChainId.KOVAN, address, 18), this.inputAmount || "0");
+  inputTokenChange(): void {
     this.updateOrder();
   }
 
   @Watch("inputAmount")
-  inputAmountChange(amount = "0"): void {
-    this.amountIn = new TokenAmount(this.amountIn.token, "10000000000000000000000");
-    // console.log('NUMBER', parseBigintIsh("10000000000000000000000").toString());
-    console.log(parseBigintIsh("10000000000000000000000"))
-    console.log(this.amountIn.raw)
-    console.log(parseBigintIsh("10000000000000000000000").toString())
-    console.log(this.amountIn.raw.toString())
+  inputAmountChange(): void {
     this.updateOrder();
   }
 
   @Watch("outputToken")
-  outputTokenChange(address: string): void {
-    this.amountOut = new TokenAmount(new Token(ChainId.KOVAN, address, 18), this.outputAmount || "0");
+  outputTokenChange(): void {
     this.updateOrder();
   }
 
   @Watch("outputAmount")
-  outputAmountChange(amount: string): void {
-    this.amountOut = new TokenAmount(this.amountOut.token, amount || "0");
+  outputAmountChange(): void {
     this.updateOrder();
   }
 
   @Watch("price")
   priceChange(price: number): void {
     if (!this.order) this.updateOrder();
-    const den = JSBI.BigInt(1e6)
-    const num = JSBI.BigInt(price * 1e6);
-    const _price = new Price(this.amountIn.currency, this.amountOut.currency, den, num);
-
-    let limitOrder = new LimitOrder(
-      this.order.maker,
-      new TokenAmount(this.amountIn.token, this.inputAmount),
-      new TokenAmount(this.amountOut.token, this.outputAmount),
-      this.order.recipient,
-      this.order.startTime,
-      this.order.endTime,
-      this.order.stopPrice,
-      this.order.oracleAddress,
-      this.order.oracleData
-    );
-    this.order = limitOrder.usePrice(_price);
+    const _price = new Price(this.amountIn.currency, this.amountOut.currency, JSBI.BigInt(1e6), JSBI.BigInt(price * 1e6));
+    this.order = this.order.usePrice(_price);
     this.outputAmount = this.order.amountOut.raw.toString();
-    console.log(this.outputAmount, this.order.amountOut);
   }
 
   async sign(): Promise<void> {
