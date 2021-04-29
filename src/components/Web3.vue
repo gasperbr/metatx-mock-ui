@@ -3,11 +3,10 @@
     <div>ChainId: {{chainId > 0 ? chainId : '?'}} | {{chainId === ChainId.KOVAN ? '(Kovan) ✔' :  ('Please switch to the Kovan network')}}</div>
     <div>Address: {{address}}<span style="text-decoration: underline" v-if="!address" v-on:click="connectMM">connnect wallet</span></div>
     <hr>
-    <div>Your WETH balance: {{weth}}</div>
-    <div>Your DAI balance: {{dai}}</div>
-    <hr>
     <div>Your Bentobox WETH balance: {{bweth}}</div>
+    <small>(0xd0A1E359811322d97991E03f863a0C30C2cF029C)</small>
     <div>Your BentoBox DAI balance: {{bdai}}</div>
+    <small>(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa)</small>
     <hr>
     <span style="text-decoration: underline; cursor: pointer" v-on:click="approveMC">Approve Limit Order master contract</span>
   </v-container>
@@ -71,11 +70,19 @@ export default class Web3 extends Vue {
   }
 
   async getBalances(address: string, provider: ethers.providers.Web3Provider): Promise<void> {
-    this.weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf(address));
-    this.dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf(address));
-    // todo bento balance of
-    this.bdai = "";
-    this.bweth = "";
+    // this.weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf(address));
+    // this.dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf(address));
+    
+    const BB = await new Contract(this.bentoAddress, bentoBox, this.$store.state.signer);
+    const wethShare = await BB.balanceOf(this.wethAddress, address);
+    const daiShare = await BB.balanceOf(this.daiAddress, address);
+
+    const _bweth = (await BB.toAmount(this.wethAddress, wethShare, false)).toString() || "0";
+    const _bdai = (await BB.toAmount(this.daiAddress, daiShare, false)).toString() || "0";
+
+    this.bweth = _bweth.length > 17 ? _bweth.slice(0, _bweth.length - 18) + '.' + _bweth.slice(_bweth.length - 18, _bweth.length) : _bweth;
+    this.bdai = _bdai.length > 17 ? _bdai.slice(0, _bdai.length - 18) + '.' + _bdai.slice(_bdai.length - 18, _bdai.length) : _bdai;
+
   }
 
   async approveMC() {
