@@ -95,8 +95,8 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh, send } from 'limitorderv2-sdk';
-import { BigNumber, ethers } from 'ethers';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh } from 'limitorderv2-sdk';
+import { ethers } from 'ethers';
 
 @Component({
   components: {
