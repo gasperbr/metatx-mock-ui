@@ -95,8 +95,8 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price } from 'limitorderv2-sdk';
-import axios from 'axios';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh } from 'limitorderv2-sdk';
+import { BigNumber } from 'ethers';
 
 @Component({
   components: {
@@ -109,10 +109,10 @@ export default class LimitOrderV2 extends Vue {
   inputAmount = "1";
   outputToken = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
   outputTokenDecimals = 18;
-  outputAmount = "0";
+  outputAmount = "1";
   price = "";
   amountIn = new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, 18), "1");
-  amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "0");
+  amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "1");
 
   order!: LimitOrder;
 
@@ -122,6 +122,7 @@ export default class LimitOrderV2 extends Vue {
 
   updateOrder(): void {
     if (!this.validParams()) return;
+    console.log(this.amountOut);
     this.order = new LimitOrder(
       this.$store.state.address,
       this.amountIn,
@@ -152,16 +153,15 @@ export default class LimitOrderV2 extends Vue {
   }
 
   @Watch("inputAmount")
-  inputAmountChange(amount: string): void {
-    const _price = new Price(this.amountIn.currency, this.amountOut.currency, "1000000", ((+this.price || 1) * 1e6).toString());
-    
-    this.amountIn = new TokenAmount(this.amountIn.token, amount || "0");
+  inputAmountChange(amount = "0"): void {
+    this.amountIn = new TokenAmount(this.amountIn.token, "10000000000000000000000");
+    // console.log('NUMBER', parseBigintIsh("10000000000000000000000").toString());
+    console.log(parseBigintIsh("10000000000000000000000"))
+    console.log(this.amountIn.raw)
+
+    console.log(parseBigintIsh("10000000000000000000000").toString())
+    console.log(this.amountIn.raw.toString())
     this.updateOrder();
-    
-    if (this.price) {
-      this.order = this.order.usePrice(_price);
-      this.outputAmount = this.order.amountOut.raw.toString();
-    }
   }
 
   @Watch("outputToken")
@@ -179,16 +179,43 @@ export default class LimitOrderV2 extends Vue {
   @Watch("price")
   priceChange(price: number): void {
     if (!this.order) this.updateOrder();
-    const _price = new Price(this.amountIn.currency, this.amountOut.currency, "1000000", (price * 1e6).toString());
-    this.order = this.order.usePrice(_price);
+    const den = JSBI.BigInt(1e6)
+    const num = JSBI.BigInt(price * 1e6);
+    const _price = new Price(this.amountIn.currency, this.amountOut.currency, den, num);
+
+    let limitOrder = new LimitOrder(
+      this.order.maker,
+      new TokenAmount(this.amountIn.token, this.inputAmount),
+      new TokenAmount(this.amountOut.token, this.outputAmount),
+      this.order.recipient,
+      this.order.startTime,
+      this.order.endTime,
+      this.order.stopPrice,
+      this.order.oracleAddress,
+      this.order.oracleData
+    );
+    this.order = limitOrder.usePrice(_price);
     this.outputAmount = this.order.amountOut.raw.toString();
+    console.log(this.outputAmount, this.order.amountOut);
   }
 
   async sign(): Promise<void> {
     this.updateOrder();
-    console.log(await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider));
-    // todo
-    // await axios.post('', {})
+    await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider);
+    console.log(this.order);
+    console.log(JSON.stringify([this.order.maker,
+    this.order.amountIn.raw.toString(),
+    this.order.amountOut.raw.toString(),
+    this.order.recipient,
+    this.order.startTime,
+    this.order.endTime,
+    this.order.stopPrice,
+    this.order.oracleAddress,
+    this.order.oracleData,
+    this.order.amountIn.raw.toString(),
+    this.order.v,
+    this.order.r,
+    this.order.s]));
     alert('Your tx has been relayed.')
   }
   

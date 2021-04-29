@@ -8,6 +8,9 @@
     <div>Your BentoBox DAI balance: {{bdai}}</div>
     <small>(0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa)</small>
     <hr>
+    <div>ETH / DAI price {{ethPrice}}</div>
+    <div>DAI / ETH price {{ethPriceI}}</div>
+    <hr>
     <span style="text-decoration: underline; cursor: pointer" v-on:click="approveMC">Approve Limit Order master contract</span>
   </v-container>
 </template>
@@ -15,9 +18,9 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { ethers, Contract } from "ethers";
-import { ChainId } from 'limitorderv2-sdk';
-import { erc20 } from '../constants/erc20';
+import { ChainId, ETHER, Price } from 'limitorderv2-sdk';
 import { bentoBox } from '../constants/bento';
+import { erc20 } from '../constants/erc20';
 
 declare global {
   interface Window { ethereum: any }
@@ -35,6 +38,9 @@ export default class Web3 extends Vue {
   bentoAddress = "0xF5BCE5077908a1b7370B9ae04AdC565EBd643966";
   wethAddress = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
   daiAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+
+  ethPrice = "...";
+  ethPriceI = "...";
 
   chainId = -1;
   ChainId = ChainId;
@@ -70,8 +76,11 @@ export default class Web3 extends Vue {
   }
 
   async getBalances(address: string, provider: ethers.providers.Web3Provider): Promise<void> {
-    // this.weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf(address));
-    // this.dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf(address));
+    const weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
+    const dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
+    const _ethPrice = new Price(ETHER, ETHER, weth, dai);
+    this.ethPrice = _ethPrice.toSignificant();
+    this.ethPriceI = _ethPrice.invert().toSignificant();
     
     const BB = await new Contract(this.bentoAddress, bentoBox, this.$store.state.signer);
     const wethShare = await BB.balanceOf(this.wethAddress, address);
