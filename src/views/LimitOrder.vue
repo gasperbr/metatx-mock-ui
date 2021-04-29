@@ -210,9 +210,8 @@ export default class LimitOrderV2 extends Vue {
       return [];
     }
     
-    const orders = await axios.post(`${LAMBDA_URL}/orders/view`, {
-      address: this.$store.state.address
-    });
+    axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
+    const orders = await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address});
     
     console.log(orders);
     
