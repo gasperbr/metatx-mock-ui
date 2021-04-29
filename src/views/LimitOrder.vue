@@ -95,8 +95,8 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh } from 'limitorderv2-sdk';
-import { BigNumber } from 'ethers';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, parseBigintIsh, send } from 'limitorderv2-sdk';
+import { BigNumber, ethers } from 'ethers';
 
 @Component({
   components: {
@@ -130,7 +130,9 @@ export default class LimitOrderV2 extends Vue {
       this.$store.state.address,
       "0",
       "2000000000000",
-      "0", "0x0000000000000000000000000000000000000000", "0x"
+      "0",
+      "0x0000000000000000000000000000000000000000",
+      ethers.utils.keccak256("0x00000000000000000000000000000000000000000000000000000000000000")
     );
   }
 
@@ -158,7 +160,6 @@ export default class LimitOrderV2 extends Vue {
     // console.log('NUMBER', parseBigintIsh("10000000000000000000000").toString());
     console.log(parseBigintIsh("10000000000000000000000"))
     console.log(this.amountIn.raw)
-
     console.log(parseBigintIsh("10000000000000000000000").toString())
     console.log(this.amountIn.raw.toString())
     this.updateOrder();
@@ -202,20 +203,23 @@ export default class LimitOrderV2 extends Vue {
   async sign(): Promise<void> {
     this.updateOrder();
     await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider);
-    console.log(this.order);
-    console.log(JSON.stringify([this.order.maker,
-    this.order.amountIn.raw.toString(),
-    this.order.amountOut.raw.toString(),
-    this.order.recipient,
-    this.order.startTime,
-    this.order.endTime,
-    this.order.stopPrice,
-    this.order.oracleAddress,
-    this.order.oracleData,
-    this.order.amountIn.raw.toString(),
-    this.order.v,
-    this.order.r,
-    this.order.s]));
+    // 0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87
+    console.log(JSON.stringify([
+      this.order.maker,
+      this.order.amountIn.raw.toString(),
+      this.order.amountOut.raw.toString(),
+      this.order.recipient,
+      this.order.startTime,
+      this.order.endTime,
+      this.order.stopPrice,
+      this.order.oracleAddress,
+      "0x00000000000000000000000000000000000000000000000000000000000000",
+      this.order.amountIn.raw.toString(),
+      this.order.v,
+      this.order.r,
+      this.order.s]));
+    // 0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cc7090d567f902f50cb5621a7d6a59874364ba10000000000000000000000000000000000000000000000000000000000000002000000000000000000000000d0a1e359811322d97991e03f863a0c30c2cf029c0000000000000000000000004f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
+    await this.order.send();
     alert('Your tx has been relayed.')
   }
   

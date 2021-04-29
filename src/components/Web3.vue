@@ -99,7 +99,7 @@ export default class Web3 extends Vue {
     const provider = this.$store.state.provider;
     const BB = await new Contract(this.bentoAddress, bentoBox, this.$store.state.signer);
     const nonce = (await BB.nonces(user)).toString();
-    const masterContract = "0x1C25797201499c88da0ED3C3160952300d915F90"; // kovan
+    const masterContract = "0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87"; // kovan
     const message = {
       warning: 'Give FULL access to funds in (and approved to) BentoBox?',
       user,
