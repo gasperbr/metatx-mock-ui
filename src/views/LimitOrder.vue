@@ -96,6 +96,7 @@ input {
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { ChainId, LimitOrder, Token, TokenAmount, Price } from 'limitorderv2-sdk';
+import axios from 'axios';
 
 @Component({
   components: {
@@ -103,10 +104,10 @@ import { ChainId, LimitOrder, Token, TokenAmount, Price } from 'limitorderv2-sdk
 })
 export default class LimitOrderV2 extends Vue {
   
-  inputToken = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+  inputToken = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
   inputTokenDecimals = 18;
   inputAmount = "1";
-  outputToken = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
+  outputToken = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
   outputTokenDecimals = 18;
   outputAmount = "0";
   price = "";
@@ -158,7 +159,6 @@ export default class LimitOrderV2 extends Vue {
     this.updateOrder();
     
     if (this.price) {
-      console.log(this.price);
       this.order = this.order.usePrice(_price);
       this.outputAmount = this.order.amountOut.raw.toString();
     }
@@ -185,7 +185,11 @@ export default class LimitOrderV2 extends Vue {
   }
 
   async sign(): Promise<void> {
+    this.updateOrder();
     console.log(await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider));
+    // todo
+    // await axios.post('', {})
+    alert('Your tx has been relayed.')
   }
   
 }
