@@ -204,15 +204,18 @@ export default class LimitOrderV2 extends Vue {
   }
 
   async fetchMyOrders(): Promise<any[]> {
-    console.log('fetching')
+    
     if (!this.$store.state.address) {
       setTimeout(() => this.fetchMyOrders(), 500); // ¯\_(ツ)_/¯
+      return [];
     }
     
     const orders = await axios.post(`${LAMBDA_URL}/orders/view`, {
       address: this.$store.state.address
     });
+    
     console.log(orders);
+    
     return [];
   }
   
