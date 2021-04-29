@@ -95,8 +95,10 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI } from 'limitorderv2-sdk';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL } from 'limitorderv2-sdk';
 import { ethers } from 'ethers';
+import 'axios'
+import axios from 'axios';
 
 @Component({
   components: {
@@ -118,6 +120,7 @@ export default class LimitOrderV2 extends Vue {
 
   created(): void {
     this.updateOrder();
+    this.fetchMyOrders();
   }
 
   updateOrder(): void {
@@ -132,7 +135,7 @@ export default class LimitOrderV2 extends Vue {
       "2000000000000",
       "0",
       "0x0000000000000000000000000000000000000000",
-      ethers.utils.keccak256("0x00000000000000000000000000000000000000000000000000000000000000")
+      "0x00000000000000000000000000000000000000000000000000000000000000"
     );
     console.log(this.order.amountIn.token.address, this.order.amountIn.raw.toString())
   }
@@ -198,6 +201,19 @@ export default class LimitOrderV2 extends Vue {
     // 0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cc7090d567f902f50cb5621a7d6a59874364ba10000000000000000000000000000000000000000000000000000000000000002000000000000000000000000d0a1e359811322d97991e03f863a0c30c2cf029c0000000000000000000000004f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
     await this.order.send();
     alert('Your tx has been relayed.')
+  }
+
+  async fetchMyOrders(): Promise<any[]> {
+    console.log('fetching')
+    if (!this.$store.state.address) {
+      setTimeout(() => this.fetchMyOrders(), 500); // ¯\_(ツ)_/¯
+    }
+    
+    const orders = await axios.post(`${LAMBDA_URL}/orders/view`, {
+      address: this.$store.state.address
+    });
+    console.log(orders);
+    return [];
   }
   
 }
