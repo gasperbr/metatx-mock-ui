@@ -104,9 +104,7 @@ input {
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
 import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL } from 'limitorderv2-sdk';
-import { ethers } from 'ethers';
-import 'axios'
-import axios from 'axios';
+import axios from 'axios'
 
 @Component({
   components: {
@@ -133,7 +131,6 @@ export default class LimitOrderV2 extends Vue {
   }
 
   updateOrder(): void {
-    console.log(this.inputToken);
     if (!this.validParams()) return;
     this.order = new LimitOrder(
       this.$store.state.address,
@@ -146,7 +143,6 @@ export default class LimitOrderV2 extends Vue {
       "0x0000000000000000000000000000000000000000",
       "0x00000000000000000000000000000000000000000000000000000000000000"
     );
-    console.log(this.order.amountIn.token.address, this.order.amountIn.raw.toString())
   }
 
   addZerosInput(): void {

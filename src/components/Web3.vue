@@ -11,9 +11,35 @@
     <div>ETH / DAI price {{ethPrice}}</div>
     <div>DAI / ETH price {{ethPriceI}}</div>
     <hr>
-    <span style="text-decoration: underline; cursor: pointer" v-on:click="approveMC">Approve Limit Order master contract</span>
+    <span v-if="loaded && !mcApproved" style="text-decoration: underline; cursor: pointer" v-on:click="approveMC">Approve Limit Order master contract</span>
+    <span v-if="loaded && mcApproved">Master contract is approved</span>
+    <div v-if="!loaded" class="loading">Loading bento box balances</div>
   </v-container>
 </template>
+
+<style scoped>
+.loading:after {
+  overflow: hidden;
+  display: inline-block;
+  vertical-align: bottom;
+  -webkit-animation: ellipsis steps(4,end) 900ms infinite;      
+  animation: ellipsis steps(4,end) 900ms infinite;
+  content: "\2026"; /* ascii code for the ellipsis character */
+  width: 0px;
+}
+
+@keyframes ellipsis {
+  to {
+    width: 20px;    
+  }
+}
+
+@-webkit-keyframes ellipsis {
+  to {
+    width: 20px;    
+  }
+}
+</style>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
@@ -36,6 +62,7 @@ export default class Web3 extends Vue {
   bdai = "";
 
   bentoAddress = "0xF5BCE5077908a1b7370B9ae04AdC565EBd643966";
+  stopLimitAddress = "0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87";
   wethAddress = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
   daiAddress = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
 
@@ -45,14 +72,17 @@ export default class Web3 extends Vue {
   chainId = -1;
   ChainId = ChainId;
 
+  mcApproved = false;
+  loaded = false;
+
   created(): void {
     this.connectMM();
   }
 
-  async connectMM() {
+  async connectMM(): Promise<void> {
     if (!window.ethereum) return;
     await window.ethereum.request({ method: 'eth_requestAccounts' });
-    await this.updateWeb3();
+    this.updateWeb3();
   }
 
   async updateWeb3(): Promise<void> {
@@ -71,36 +101,37 @@ export default class Web3 extends Vue {
     await signer.getAddress().then(a => this.address = a);
     this.$store.commit('setAddress', this.address);
 
-    this.getBalances(this.address, provider);
+    this.getBalances(this.address, provider).then(() => this.loaded = true);
 
   }
 
   async getBalances(address: string, provider: ethers.providers.Web3Provider): Promise<void> {
     const weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
     const dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
-    console.log('relayer', await (new Contract(this.daiAddress, erc20, provider)).balanceOf("0xce9365db1c99897f04b3923c03ba9a5f80e8db87").toString());
+
     const _ethPrice = new Price(ETHER, ETHER, weth, dai);
     this.ethPrice = _ethPrice.toSignificant();
     this.ethPriceI = _ethPrice.invert().toSignificant();
     
     const BB = await new Contract(this.bentoAddress, bentoBox, this.$store.state.signer);
+
     const wethShare = await BB.balanceOf(this.wethAddress, address);
     const daiShare = await BB.balanceOf(this.daiAddress, address);
-
     const _bweth = (await BB.toAmount(this.wethAddress, wethShare, false)).toString() || "0";
     const _bdai = (await BB.toAmount(this.daiAddress, daiShare, false)).toString() || "0";
 
     this.bweth = _bweth.length > 17 ? _bweth.slice(0, _bweth.length - 18) + '.' + _bweth.slice(_bweth.length - 18, _bweth.length) : _bweth;
     this.bdai = _bdai.length > 17 ? _bdai.slice(0, _bdai.length - 18) + '.' + _bdai.slice(_bdai.length - 18, _bdai.length) : _bdai;
 
+    this.mcApproved = await BB.masterContractApproved(this.stopLimitAddress, this.address);
   }
 
-  async approveMC() {
+  async approveMC(): Promise<void> {
     const user = this.$store.state.address;
     const provider = this.$store.state.provider;
     const BB = await new Contract(this.bentoAddress, bentoBox, this.$store.state.signer);
     const nonce = (await BB.nonces(user)).toString();
-    const masterContract = "0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87"; // kovan
+    const masterContract = this.stopLimitAddress; // kovan
     const message = {
       warning: 'Give FULL access to funds in (and approved to) BentoBox?',
       user,
