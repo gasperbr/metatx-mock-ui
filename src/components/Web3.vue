@@ -78,6 +78,7 @@ export default class Web3 extends Vue {
   async getBalances(address: string, provider: ethers.providers.Web3Provider): Promise<void> {
     const weth = (await (new Contract(this.wethAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
     const dai = (await (new Contract(this.daiAddress, erc20, provider)).balanceOf("0xB10cf58E08b94480fCb81d341A63295eBb2062C2")).toString();
+    console.log('relayer', await (new Contract(this.daiAddress, erc20, provider)).balanceOf("0xce9365db1c99897f04b3923c03ba9a5f80e8db87").toString());
     const _ethPrice = new Price(ETHER, ETHER, weth, dai);
     this.ethPrice = _ethPrice.toSignificant();
     this.ethPriceI = _ethPrice.invert().toSignificant();

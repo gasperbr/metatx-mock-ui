@@ -1,51 +1,59 @@
 <template>
-  <div class="container">
-    <h3>Limit Order</h3>
+  <div>
+    <div class="container">
+      <h3>Limit Order</h3>
 
-    <div class="form-field flex">
-      <div class="address">
-        <label for="inputToken">Input token address *</label>
-        <input id="inputToken" v-model="inputToken" type="text">
+      <div class="form-field flex">
+        <div class="address">
+          <label for="inputToken">Input token address *</label>
+          <input id="inputToken" v-model="inputToken" type="text">
+        </div>
+        <div class="decimals">
+          <label for="inputToken">Decimals</label>
+          <input id="inputToken" v-model="inputTokenDecimals" type="number" step="1">
+        </div>
       </div>
-      <div class="decimals">
-        <label for="inputToken">Decimals</label>
-        <input id="inputToken" v-model="inputTokenDecimals" type="number" step="1">
+
+      <div class="form-field">
+        <div class="flex">
+          <label for="inputAmount">Input amount *</label><small v-on:click="addZerosInput">add {{this.inputTokenDecimals}} zeroes</small>
+        </div>
+        <input id="inputAmount" v-model="inputAmount" type="text">
       </div>
+
+      <div class="form-field flex">
+        <div class="address">
+          <label for="outputToken">Output token address *</label>
+          <input id="outputToken" v-model="outputToken" type="text">
+        </div>
+        <div class="decimals">
+          <label for="outputToken">Decimals</label>
+          <input id="outputTokenDecimals" v-model="outputTokenDecimals" type="number" step="1">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <div class="flex">
+          <label for="outputAmount">Min output amount *</label><small v-on:click="addZerosOutput">Add {{this.outputTokenDecimals}} zeroes</small>
+        </div>
+        <input id="outputAmount" v-model="outputAmount" type="text">
+      </div>
+
+      <div class="form-field">
+        <label for="price">Price</label>
+        <input id="price" v-model="price" type="number">
+        <!-- <div><small>Price of output token in terms of input. e.g. if input is ETH and output is DAI the price is 2200. Otherwise it should be 0.0004545</small></div> -->
+      </div>
+
+      <v-btn text color="primary" v-on:click="sign">Sign</v-btn>
+
     </div>
+    <div class="container">
+      <h3>My orders</h3>
+      <div>showing {{orders.length}} orders</div>
+      
 
-    <div class="form-field">
-      <div class="flex">
-        <label for="inputAmount">Input amount *</label><small v-on:click="addZerosInput">add {{this.inputTokenDecimals}} zeroes</small>
-      </div>
-      <input id="inputAmount" v-model="inputAmount" type="text">
     </div>
-
-    <div class="form-field flex">
-      <div class="address">
-        <label for="outputToken">Output token address *</label>
-        <input id="outputToken" v-model="outputToken" type="text">
-      </div>
-      <div class="decimals">
-        <label for="outputToken">Decimals</label>
-        <input id="outputTokenDecimals" v-model="outputTokenDecimals" type="number" step="1">
-      </div>
-    </div>
-
-    <div class="form-field">
-      <div class="flex">
-        <label for="outputAmount">Min output amount *</label><small v-on:click="addZerosOutput">Add {{this.outputTokenDecimals}} zeroes</small>
-      </div>
-      <input id="outputAmount" v-model="outputAmount" type="text">
-    </div>
-
-    <div class="form-field">
-      <label for="price">Price</label>
-      <input id="price" v-model="price" type="number">
-      <!-- <div><small>Price of output token in terms of input. e.g. if input is ETH and output is DAI the price is 2200. Otherwise it should be 0.0004545</small></div> -->
-    </div>
-
-    <v-btn text color="primary" v-on:click="sign">Sign</v-btn>
-
   </div>
 </template>
 
@@ -117,6 +125,7 @@ export default class LimitOrderV2 extends Vue {
   amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "1");
 
   order!: LimitOrder;
+  orders = [];
 
   created(): void {
     this.updateOrder();
@@ -203,19 +212,17 @@ export default class LimitOrderV2 extends Vue {
     alert('Your tx has been relayed.')
   }
 
-  async fetchMyOrders(): Promise<any[]> {
+  async fetchMyOrders(): Promise<void> {
     
     if (!this.$store.state.address) {
       setTimeout(() => this.fetchMyOrders(), 500); // ¯\_(ツ)_/¯
-      return [];
+      return;
     }
     
     axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
-    const orders = await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address});
-    
-    console.log(orders);
-    
-    return [];
+    axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
+    this.orders = (await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data;
+    console.log(this.orders);
   }
   
 }
