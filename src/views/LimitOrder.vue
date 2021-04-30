@@ -45,13 +45,30 @@
         <!-- <div><small>Price of output token in terms of input. e.g. if input is ETH and output is DAI the price is 2200. Otherwise it should be 0.0004545</small></div> -->
       </div>
 
-      <v-btn text color="primary" v-on:click="sign">Sign</v-btn>
+    <v-btn text color="primary" v-on:click="sign">Sign</v-btn>
 
     </div>
     <div class="container">
       <h3>My orders</h3>
       <div>showing {{orders.length}} orders</div>
-      
+      <div class="table-row">
+        <div class="order-info">Order info</div>
+        <div class="order-status">Status</div>
+      </div>
+      <div v-if="!ordersLoaded">Loading..</div>
+      <div v-for="_order in orders" v-bind:key="_order.index" class="table-row">
+        <div class="order-info">
+          <div>Input: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
+          <div>Input amount: {{_order.limitOrder.amountIn.raw.toString()}}</div>
+          <div>output: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
+          <div>Min output amount: {{_order.limitOrder.amountOut.raw.toString()}}</div>
+        </div>
+        <div class="order-status">
+          <div>Filled amount:</div>
+          <div>{{_order.filledAmount}}%</div>
+          <v-btn text color="primary" v-on:click="cancelOrder">Cancel order</v-btn>
+        </div>
+      </div>
 
     </div>
   </div>
@@ -99,11 +116,27 @@ input {
 .flex {
   display: flex;
 }
+
+.table-row {
+  display: flex;
+  border-bottom: 1px solid gray;
+  .order-info {
+    flex-grow: 1;
+  }
+  .order-status {
+    flex: 0 1 200px;
+    min-width: 200px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+}
 </style>
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL } from 'limitorderv2-sdk';
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL, ETHER } from 'limitorderv2-sdk';
 import axios from 'axios'
 
 @Component({
@@ -124,6 +157,8 @@ export default class LimitOrderV2 extends Vue {
 
   order!: LimitOrder;
   orders = [];
+
+  ordersLoaded = false;
 
   created(): void {
     this.updateOrder();
@@ -218,8 +253,18 @@ export default class LimitOrderV2 extends Vue {
     /* axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
     axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*'; */
 
-    this.orders = (await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data;
-    console.log(this.orders);
+    this.orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map(({order}: any, index: number) => { 
+      return {
+        limitOrder: new LimitOrder(order.maker, new TokenAmount(new Token(42, this.inputToken, 18), "1000"), new TokenAmount(new Token(42, this.inputToken, 18), "1000"), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData),
+        filledAmount: '0',
+        index
+      }
+    });
+    this.ordersLoaded = true;
+  }
+
+  async cancelOrder() {
+    console.log('wip')
   }
   
 }
