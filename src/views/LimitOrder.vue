@@ -215,8 +215,9 @@ export default class LimitOrderV2 extends Vue {
       return;
     }
     
-    axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
-    axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*';
+    /* axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
+    axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*'; */
+
     this.orders = (await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data;
     console.log(this.orders);
   }
