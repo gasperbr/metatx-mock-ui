@@ -253,9 +253,13 @@ export default class LimitOrderV2 extends Vue {
     /* axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
     axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*'; */
 
-    this.orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map(({order}: any, index: number) => { 
+    this.orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map((data: any, index: number) => { 
+      data.amountInString = data.amountInString || "1";
+      data.amountOutString = data.amountOutString || "1";
+      const order = data.order;
+      console.log(data);
       return {
-        limitOrder: new LimitOrder(order.maker, new TokenAmount(new Token(42, this.inputToken, 18), "1000"), new TokenAmount(new Token(42, this.inputToken, 18), "1000"), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData),
+        limitOrder: new LimitOrder(order.maker, new TokenAmount(order.amountIn.token, data.amountInString), new TokenAmount(order.amountOut.token, data.amountOutString), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData),
         filledAmount: '0',
         index
       }
