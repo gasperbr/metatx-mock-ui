@@ -57,16 +57,18 @@
       </div>
       <div v-if="!ordersLoaded">Loading..</div>
       <div v-for="_order in orders" v-bind:key="_order.index" class="table-row">
-        <div class="order-info">
+        <div class="order-info" v-if="!!_order.limitOrder">
           <div>Input: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
-          <div>Input amount: {{_order.limitOrder.amountIn.raw.toString()}}</div>
+          <div>Input amount: {{_order.limitOrder.amountInRaw}}</div>
           <div>output: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
           <div>Min output amount: {{_order.limitOrder.amountOut.raw.toString()}}</div>
         </div>
-        <div class="order-status">
+        <div class="order-status" v-if="!!_order.limitOrder">
           <div>Filled amount:</div>
-          <div>{{_order.filledAmount}}%</div>
-          <v-btn text color="primary" v-on:click="cancelOrder">Cancel order</v-btn>
+          <div>{{_order.filledPercent}}%</div>
+          <div v-if="_order.isCanceled">Canceled</div>
+          <div v-if="_order.filled">Filled</div>
+          <v-btn v-if="!_order.isCanceled && !_order.filled" text color="primary" v-on:click="cancelOrder(_order.index)">Cancel order</v-btn>
         </div>
       </div>
 
@@ -136,8 +138,10 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL, ETHER } from 'limitorderv2-sdk';
-import axios from 'axios'
+import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
+import { BigNumber, Contract } from "ethers";
+import { stopLimitOrder } from '../constants/stopLimitOrder';
+import axios from 'axios';
 
 @Component({
   components: {
@@ -250,25 +254,37 @@ export default class LimitOrderV2 extends Vue {
       return;
     }
     
-    /* axios.defaults.headers.post['Content-Type'] ='application/x-www-form-urlencoded';
-    axios.defaults.headers.post['Access-Control-Allow-Origin'] = '*'; */
+    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.KOVAN), stopLimitOrder, this.$store.state.provider);
 
-    this.orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map((data: any, index: number) => { 
-      data.amountInString = data.amountInString || "1";
-      data.amountOutString = data.amountOutString || "1";
-      const order = data.order;
-      console.log(data);
+    const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map(async (order: any, index: number) => { 
+      
+      const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
+      const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
+      const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
+      const digest = limitOrder.getDigest();
+      const filledAmount = await stopLimitOrderContract.orderStatus(digest);
+      const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
+      const isCanceled = await stopLimitOrderContract.cancelledOrder(this.$store.state.address, digest);
+      const filled = filledAmount.toString() == order.amountIn;
+      console.log(limitOrder.amountIn.raw.toString());
       return {
-        limitOrder: new LimitOrder(order.maker, new TokenAmount(order.amountIn.token, data.amountInString), new TokenAmount(order.amountOut.token, data.amountOutString), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData),
-        filledAmount: '0',
-        index
-      }
+        limitOrder,
+        filledPercent,
+        index,
+        isCanceled,
+        filled
+      };
     });
+    
+    await Promise.all(orders).then(o => this.orders = o as any);
+    
     this.ordersLoaded = true;
+
   }
 
-  async cancelOrder() {
-    console.log('wip')
+  cancelOrder(i: number): void {
+    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.KOVAN), stopLimitOrder, this.$store.state.signer);
+    stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getDigest());
   }
   
 }

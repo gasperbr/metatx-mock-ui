@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import VueRouter, { RouteConfig } from 'vue-router'
-import LimitOrderV2 from '../views/LimitOrder.vue'
+import LimitOrderV2 from '../views/LimitOrderV2.vue'
 import Swap from '../views/Swap.vue'
 
 Vue.use(VueRouter)
