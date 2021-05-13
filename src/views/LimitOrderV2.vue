@@ -59,9 +59,9 @@
       <div v-for="_order in orders" v-bind:key="_order.index" class="table-row">
         <div class="order-info" v-if="!!_order.limitOrder">
           <div>Input: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
-          <div>Input amount: {{_order.limitOrder.amountInRaw}}</div>
+          <div>Input amount: {{_order.inRaw}}</div><!-- {{_order.limitOrder.amountInRaw}} would be prefered but vue breaks the toString method that gets called in this nested object-->
           <div>output: <small>{{_order.limitOrder.amountIn.token.address}}</small></div>
-          <div>Min output amount: {{_order.limitOrder.amountOut.raw.toString()}}</div>
+          <div>Min output amount: {{_order.minOutRaw}}</div>
         </div>
         <div class="order-status" v-if="!!_order.limitOrder">
           <div>Filled amount:</div>
@@ -261,18 +261,20 @@ export default class LimitOrderV2 extends Vue {
       const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
       const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
       const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
+      console.log(limitOrder.amountInRaw, limitOrder.amountOutRaw);
       const digest = limitOrder.getDigest();
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
       const isCanceled = await stopLimitOrderContract.cancelledOrder(this.$store.state.address, digest);
       const filled = filledAmount.toString() == order.amountIn;
-      console.log(limitOrder.amountIn.raw.toString());
       return {
         limitOrder,
         filledPercent,
         index,
         isCanceled,
-        filled
+        filled,
+        inRaw: limitOrder.amountOutRaw, // make this accessable at the base of the object because vue fucks up the toString method of a nested object??
+        minOutRaw: limitOrder.amountOutRaw
       };
     });
     
