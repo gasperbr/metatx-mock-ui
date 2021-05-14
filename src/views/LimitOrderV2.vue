@@ -138,7 +138,9 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { ChainId, LimitOrder, Token, TokenAmount, Price, JSBI, LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
+import { LimitOrder,LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
+import { ChainId, Token, TokenAmount, JSBI, } from '@sushiswap/sdk';
+import { Price } from '@sushiswap/sdk';
 import { BigNumber, Contract } from "ethers";
 import { stopLimitOrder } from '../constants/stopLimitOrder';
 import axios from 'axios';
@@ -261,7 +263,6 @@ export default class LimitOrderV2 extends Vue {
       const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
       const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
       const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
-      console.log(limitOrder.amountInRaw, limitOrder.amountOutRaw);
       const digest = limitOrder.getDigest();
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();

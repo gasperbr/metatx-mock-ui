@@ -44,7 +44,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator';
 import { ethers, Contract } from "ethers";
-import { ChainId, ETHER, Price } from 'limitorderv2-sdk';
+import { ChainId, ETHER, Price } from '@sushiswap/sdk';
 import { bentoBox } from '../constants/bento';
 import { erc20 } from '../constants/erc20';
 
