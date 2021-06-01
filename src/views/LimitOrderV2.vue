@@ -138,7 +138,7 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { LimitOrder,LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
+import { LimitOrder, LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
 import { ChainId, Token, TokenAmount, JSBI, } from '@sushiswap/sdk';
 import { Price } from '@sushiswap/sdk';
 import { BigNumber, Contract } from "ethers";
@@ -151,15 +151,15 @@ import axios from 'axios';
 })
 export default class LimitOrderV2 extends Vue {
   
-  inputToken = "0xd0A1E359811322d97991E03f863a0C30C2cF029C";
+  inputToken = "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270";
   inputTokenDecimals = 18;
   inputAmount = "1";
-  outputToken = "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa";
+  outputToken = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
   outputTokenDecimals = 18;
   outputAmount = "1";
   price = "";
-  amountIn = new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, 18), "1");
-  amountOut = new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, 18), "1");
+  amountIn = new TokenAmount(new Token(ChainId.MATIC, this.inputToken, 18), "1");
+  amountOut = new TokenAmount(new Token(ChainId.MATIC, this.outputToken, 18), "1");
 
   order!: LimitOrder;
   orders = [];
@@ -175,8 +175,8 @@ export default class LimitOrderV2 extends Vue {
     if (!this.validParams()) return;
     this.order = new LimitOrder(
       this.$store.state.address,
-      new TokenAmount(new Token(ChainId.KOVAN, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
-      new TokenAmount(new Token(ChainId.KOVAN, this.outputToken, this.outputTokenDecimals), this.outputAmount || "0"),
+      new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
+      new TokenAmount(new Token(ChainId.MATIC, this.outputToken, this.outputTokenDecimals), this.outputAmount || "0"),
       this.$store.state.address,
       "0",
       "2000000000000",
@@ -228,7 +228,7 @@ export default class LimitOrderV2 extends Vue {
 
   async sign(): Promise<void> {
     this.updateOrder();
-    await this.order.signOrderWithProvider(ChainId.KOVAN, this.$store.state.provider);
+    await this.order.signOrderWithProvider(ChainId.MATIC, this.$store.state.provider);
     // 0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87
     console.log(JSON.stringify([
       this.order.maker,
@@ -246,7 +246,7 @@ export default class LimitOrderV2 extends Vue {
       this.order.s]));
     // 0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cc7090d567f902f50cb5621a7d6a59874364ba10000000000000000000000000000000000000000000000000000000000000002000000000000000000000000d0a1e359811322d97991e03f863a0c30c2cf029c0000000000000000000000004f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
     await this.order.send();
-    alert('Your tx has been relayed.')
+    alert('Your tx has been relayed.');
   }
 
   async fetchMyOrders(): Promise<void> {
@@ -256,18 +256,19 @@ export default class LimitOrderV2 extends Vue {
       return;
     }
     
-    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.KOVAN), stopLimitOrder, this.$store.state.provider);
+    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.provider);
 
-    const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address})).data.data || []).map(async (order: any, index: number) => { 
+    const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address, chainId: ChainId.MATIC})).data.data || []).map(async (order: any, index: number) => { 
       
       const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
       const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
       const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
-      const digest = limitOrder.getDigest();
+      const digest = limitOrder.getTypeHash(ChainId.MATIC);
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
       const isCanceled = await stopLimitOrderContract.cancelledOrder(this.$store.state.address, digest);
       const filled = filledAmount.toString() == order.amountIn;
+
       return {
         limitOrder,
         filledPercent,
@@ -286,7 +287,7 @@ export default class LimitOrderV2 extends Vue {
   }
 
   cancelOrder(i: number): void {
-    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.KOVAN), stopLimitOrder, this.$store.state.signer);
+    const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.signer);
     stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getDigest());
   }
   
