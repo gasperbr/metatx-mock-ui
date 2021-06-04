@@ -172,7 +172,7 @@ export default class LimitOrderV2 extends Vue {
   }
 
   updateOrder(): void {
-    if (!this.validParams()) return;
+    if (!this.validParams()) return console.log('did not update order');
     this.order = new LimitOrder(
       this.$store.state.address,
       new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
@@ -184,6 +184,7 @@ export default class LimitOrderV2 extends Vue {
       "0x0000000000000000000000000000000000000000",
       "0x00000000000000000000000000000000000000000000000000000000000000"
     );
+    console.log(this.order.amountIn.token.address);
   }
 
   addZerosInput(): void {
@@ -201,6 +202,9 @@ export default class LimitOrderV2 extends Vue {
   @Watch("inputToken")
   inputTokenChange(): void {
     this.updateOrder();
+    if (this.inputToken) {
+      this.amountIn = new TokenAmount(new Token(ChainId.MATIC, this.inputToken, 18), "1");
+    }
   }
 
   @Watch("inputAmount")
@@ -211,6 +215,9 @@ export default class LimitOrderV2 extends Vue {
   @Watch("outputToken")
   outputTokenChange(): void {
     this.updateOrder();
+    if (this.outputToken) {
+      this.amountOut = new TokenAmount(new Token(ChainId.MATIC, this.outputToken, 18), "1");
+    } 
   }
 
   @Watch("outputAmount")
@@ -229,7 +236,7 @@ export default class LimitOrderV2 extends Vue {
   async sign(): Promise<void> {
     this.updateOrder();
     await this.order.signOrderWithProvider(ChainId.MATIC, this.$store.state.provider);
-    // 0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87
+    // 0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87 
     console.log(JSON.stringify([
       this.order.maker,
       this.order.amountIn.raw.toString(),

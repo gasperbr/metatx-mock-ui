@@ -78,7 +78,7 @@ export default class Web3 extends Vue {
 
   created(): void {
     this.connectMM();
-    console.log(this.stopLimitAddress);
+    console.log('slp', this.stopLimitAddress)
   }
 
   async connectMM(): Promise<void> {
