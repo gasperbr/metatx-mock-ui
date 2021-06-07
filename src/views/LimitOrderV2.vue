@@ -270,7 +270,7 @@ export default class LimitOrderV2 extends Vue {
       const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
       const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
       const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
-      const digest = limitOrder.getTypeHash(ChainId.MATIC);
+      const digest = limitOrder.getTypeHash();
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
       const isCanceled = await stopLimitOrderContract.cancelledOrder(this.$store.state.address, digest);
