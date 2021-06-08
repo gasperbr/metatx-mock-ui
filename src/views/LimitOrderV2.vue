@@ -138,7 +138,7 @@ input {
 
 <script lang="ts">
 import { Component, Vue, Watch } from 'vue-property-decorator';
-import { LimitOrder, LAMBDA_URL, getVerifyingContract } from 'limitorderv2-sdk';
+import { LimitOrder, LAMBDA_URL, getVerifyingContract, ILimitOrderData } from 'limitorderv2-sdk';
 import { ChainId, Token, TokenAmount, JSBI, } from '@sushiswap/sdk';
 import { Price } from '@sushiswap/sdk';
 import { BigNumber, Contract } from "ethers";
@@ -265,11 +265,12 @@ export default class LimitOrderV2 extends Vue {
     
     const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.provider);
 
-    const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address, chainId: ChainId.MATIC})).data.data || []).map(async (order: any, index: number) => { 
+    const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address, chainId: ChainId.MATIC})).data.data || []).map(async (order: ILimitOrderData, index: number) => { 
       
-      const tokenIn = new Token(order.chainId, order.tokenIn, order.tokenInDecimals || 18);
-      const tokenOut = new Token(order.chainId, order.tokenOut, order.tokenOutDecimals || 18);
-      const limitOrder = new LimitOrder(order.maker, new TokenAmount(tokenIn, order.amountIn), new TokenAmount(tokenOut, order.amountOut), order.recipient, order.startTime, order.endTime, order.stopPrice, order.oracleAddress, order.oracleData);
+      console.log(order);
+      order.tokenInDecimals = order.tokenInDecimals || 18;
+      order.tokenOutDecimals = order.tokenOutDecimals || 18;
+      const limitOrder = LimitOrder.getLimitOrder(order);
       const digest = limitOrder.getTypeHash();
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
@@ -282,7 +283,7 @@ export default class LimitOrderV2 extends Vue {
         index,
         isCanceled,
         filled,
-        inRaw: limitOrder.amountOutRaw, // make this accessable at the base of the object because vue fucks up the toString method of a nested object??
+        inRaw: limitOrder.amountInRaw, // make this accessable at the base of the object because vue fucks up the toString method of a nested object??
         minOutRaw: limitOrder.amountOutRaw
       };
     });
@@ -294,8 +295,9 @@ export default class LimitOrderV2 extends Vue {
   }
 
   cancelOrder(i: number): void {
+    console.log(this.orders[i])
     const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.signer);
-    stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getDigest());
+    stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getTypeHash());
   }
   
 }
