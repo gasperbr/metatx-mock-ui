@@ -178,8 +178,8 @@ export default class LimitOrderV2 extends Vue {
       new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
       new TokenAmount(new Token(ChainId.MATIC, this.outputToken, this.outputTokenDecimals), this.outputAmount || "0"),
       this.$store.state.address,
-      "0",
-      "2000000000000",
+      0,
+      Math.floor(new Date().getTime() / 1000) + 100000,
       "0",
       "0x0000000000000000000000000000000000000000",
       "0x00000000000000000000000000000000000000000000000000000000000000"
