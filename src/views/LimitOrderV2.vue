@@ -228,7 +228,9 @@ export default class LimitOrderV2 extends Vue {
   @Watch("price")
   priceChange(price: number): void {
     if (!this.order) this.updateOrder();
-    const _price = new Price(this.amountIn.currency, this.amountOut.currency, JSBI.BigInt(1e6), JSBI.BigInt(price * 1e6));
+    
+    const _price = new Price(this.amountIn.currency, this.amountOut.currency, JSBI.BigInt(1e6), JSBI.BigInt(Math.floor(price * 1e6)));
+    
     this.order = this.order.usePrice(_price);
     this.outputAmount = this.order.amountOut.raw.toString();
   }
