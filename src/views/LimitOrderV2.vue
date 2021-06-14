@@ -172,7 +172,7 @@ export default class LimitOrderV2 extends Vue {
   }
 
   updateOrder(): void {
-    if (!this.validParams()) return console.log('did not update order');
+    if (!this.validParams()) return;
     this.order = new LimitOrder(
       this.$store.state.address,
       new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
@@ -184,7 +184,6 @@ export default class LimitOrderV2 extends Vue {
       "0x0000000000000000000000000000000000000000",
       "0x00000000000000000000000000000000000000000000000000000000000000"
     );
-    console.log(this.order.amountIn.token.address);
   }
 
   addZerosInput(): void {
@@ -269,11 +268,12 @@ export default class LimitOrderV2 extends Vue {
 
     const orders = ((await axios.post(`${LAMBDA_URL}/orders/view`, {address: this.$store.state.address, chainId: ChainId.MATIC})).data.data || []).map(async (order: ILimitOrderData, index: number) => { 
       
-      console.log(order);
-      order.tokenInDecimals = order.tokenInDecimals || 18;
-      order.tokenOutDecimals = order.tokenOutDecimals || 18;
+      order.chainId = +order.chainId,
+      order.tokenInDecimals = +order.tokenInDecimals || 18;
+      order.tokenOutDecimals = +order.tokenOutDecimals || 18;
       const limitOrder = LimitOrder.getLimitOrder(order);
       const digest = limitOrder.getTypeHash();
+
       const filledAmount = await stopLimitOrderContract.orderStatus(digest);
       const filledPercent = filledAmount.mul(BigNumber.from("100")).div(BigNumber.from(order.amountIn)).toString();
       const isCanceled = await stopLimitOrderContract.cancelledOrder(this.$store.state.address, digest);
@@ -297,7 +297,6 @@ export default class LimitOrderV2 extends Vue {
   }
 
   cancelOrder(i: number): void {
-    console.log(this.orders[i])
     const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.signer);
     stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getTypeHash());
   }
