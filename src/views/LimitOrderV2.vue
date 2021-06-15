@@ -175,8 +175,8 @@ export default class LimitOrderV2 extends Vue {
     if (!this.validParams()) return;
     this.order = new LimitOrder(
       this.$store.state.address,
-      new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals), this.inputAmount || "0"),
-      new TokenAmount(new Token(ChainId.MATIC, this.outputToken, this.outputTokenDecimals), this.outputAmount || "0"),
+      new TokenAmount(new Token(ChainId.MATIC, this.inputToken, this.inputTokenDecimals, 'DUMMY1'), this.inputAmount || "0"),
+      new TokenAmount(new Token(ChainId.MATIC, this.outputToken, this.outputTokenDecimals, 'DUMMY2'), this.outputAmount || "0"),
       this.$store.state.address,
       0,
       Math.floor(new Date().getTime() / 1000) + 100000,
@@ -237,7 +237,7 @@ export default class LimitOrderV2 extends Vue {
   async sign(): Promise<void> {
     this.updateOrder();
     await this.order.signOrderWithProvider(ChainId.MATIC, this.$store.state.provider);
-    // 0xce9365dB1C99897f04B3923C03ba9a5f80E8DB87 
+
     console.log(JSON.stringify([
       this.order.maker,
       this.order.amountIn.raw.toString(),
@@ -252,7 +252,6 @@ export default class LimitOrderV2 extends Vue {
       this.order.v,
       this.order.r,
       this.order.s]));
-    // 0x000000000000000000000000000000000000000000000000000000000000006000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000cc7090d567f902f50cb5621a7d6a59874364ba10000000000000000000000000000000000000000000000000000000000000002000000000000000000000000d0a1e359811322d97991e03f863a0c30c2cf029c0000000000000000000000004f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa
     await this.order.send();
     alert('Your tx has been relayed.');
   }
