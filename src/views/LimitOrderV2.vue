@@ -279,6 +279,7 @@ export default class LimitOrderV2 extends Vue {
       const filled = filledAmount.toString() == order.amountIn;
 
       return {
+        digest,
         limitOrder,
         filledPercent,
         index,
@@ -297,7 +298,7 @@ export default class LimitOrderV2 extends Vue {
 
   cancelOrder(i: number): void {
     const stopLimitOrderContract = new Contract(getVerifyingContract(ChainId.MATIC), stopLimitOrder, this.$store.state.signer);
-    stopLimitOrderContract.cancelOrder((this.orders[i] as any).limitOrder.getTypeHash());
+    stopLimitOrderContract.cancelOrder((this.orders[i] as any).digest);
   }
   
 }
