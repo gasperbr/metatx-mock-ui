@@ -169,6 +169,7 @@ export default class LimitOrderV2 extends Vue {
   created(): void {
     this.updateOrder();
     this.fetchMyOrders();
+    console.log('VC', getVerifyingContract(ChainId.MATIC));
   }
 
   updateOrder(): void {
